@@ -54,6 +54,9 @@ Negative values or values above `100` are not allowed.
     - Percentage modifier to decrease stamina drain for sneaking while no mob has noticed the player.
     - Default: `100`
 
+## Configuration Synchronization
+This mod uses [ServerSync](https://github.com/blaxxun-boop/ServerSync) to synchronize configuration settings in multiplayer. All settings for the clients will be controlled by the server if both the server and the client have this mod installed.
+
 ## Compatibility
 
 Simply Stamina is designed to be compatible with most Valheim mods. However, it may exhibit unexpected behavior if used in conjunction with other mods that alter stamina mechanics. Exercise caution when combining multiple stamina-altering mods.
