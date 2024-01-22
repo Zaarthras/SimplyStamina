@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using BepInEx.Configuration;
-using BepInEx.Logging;
-using JetBrains.Annotations;
+﻿using BepInEx.Configuration;
 using ServerSync;
 
 namespace SimplyStamina; 
