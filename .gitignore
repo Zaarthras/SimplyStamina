@@ -2,6 +2,7 @@
 
 # User specific
 **/.idea/
+Include/
 
 *.suo
 *.user

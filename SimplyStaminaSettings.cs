@@ -1,4 +1,8 @@
-﻿using BepInEx.Configuration;
+﻿using System.Collections.Generic;
+using BepInEx.Configuration;
+using BepInEx.Logging;
+using JetBrains.Annotations;
+using ServerSync;
 
 namespace SimplyStamina; 
 
@@ -8,160 +12,255 @@ namespace SimplyStamina;
 public static class SimplyStaminaSettings {
   
   /**
+   * <summary>The config to bind settings to.</summary>
+   */
+  private static ConfigFile? config;
+
+  /**
+   * <summary>The config sync instance.</summary>
+   */
+  private static ConfigSync? configSync;
+
+  #region Synced Config Entries
+  
+  /**
+   * <summary>Synced config entry that defines if stamina drain for using the hammer is disabled.</summary>
+   */
+  private static SyncedConfigEntry<bool>? disableHammerStaminaUsageConfigEntry;
+
+  /**
+   * <summary>Synced config entry that defines if stamina drain for using the hoe is disabled.</summary>
+   */
+  private static SyncedConfigEntry<bool>? disableHoeStaminaUsageConfigEntry;
+
+  /**
+   * <summary>Synced config entry that defines if stamina drain for using the cultivator is disabled.</summary>
+   */
+  private static SyncedConfigEntry<bool>? disableCultivatorStaminaUsageConfigEntry;
+
+  /**
+   * <summary>Synced config entry that defines if stamina drain for moving while encumbered is disabled.</summary>
+   */
+  private static SyncedConfigEntry<bool>? disableEncumberedStaminaDrainConfigEntry;
+
+  /**
+   * <summary>Synced config entry of the multiplication modifier for stamina drain for running.</summary>
+   */
+  private static SyncedConfigEntry<float>? runStaminaDrainModifierConfigEntry;
+
+  /**
+   * <summary>
+   * Synced config entry of the multiplication modifier for stamina drain for running while not being noticed by mobs.
+   * </summary>
+   */
+  private static SyncedConfigEntry<float>? runUnnoticedStaminaDrainModifierConfigEntry;
+
+  /**
+   * <summary>Synced config entry of the multiplication modifier for stamina drain for jumping.</summary>
+   */
+  private static SyncedConfigEntry<float>? jumpStaminaDrainModifierConfigEntry;
+
+  /**
+   * <summary>
+   * Synced config entry of the multiplication modifier for stamina drain for jumping while not being noticed by mobs.
+   * </summary>
+   */
+  private static SyncedConfigEntry<float>? jumpUnnoticedStaminaDrainModifierConfigEntry;
+
+  /**
+   * <summary>Synced config entry of the multiplication modifier for stamina drain for sneaking.</summary>
+   */
+  private static SyncedConfigEntry<float>? sneakStaminaDrainModifierConfigEntry;
+
+  /**
+   * <summary>
+   * Synced config entry of the multiplication modifier for stamina drain for sneaking while not being noticed by mobs.
+   * </summary>
+   */
+  private static SyncedConfigEntry<float>? sneakUnnoticedStaminaDrainModifierConfigEntry;
+
+  #endregion Synced Config Entries
+
+  #region Public Getters
+
+  /**
    * <summary>Defines if stamina drain for using the hammer is disabled.</summary>
    */
-  public static bool DisableHammerStaminaUsage { get; private set; }
-  
+  public static bool DisableHammerStaminaUsage => disableHammerStaminaUsageConfigEntry?.Value ?? false;
+
   /**
    * <summary>Defines if stamina drain for using the hoe is disabled.</summary>
    */
-  public static bool DisableHoeStaminaUsage { get; private set; }
-  
+  public static bool DisableHoeStaminaUsage => disableHoeStaminaUsageConfigEntry?.Value ?? false;
+
   /**
    * <summary>Defines if stamina drain for using the cultivator is disabled.</summary>
    */
-  public static bool DisableCultivatorStaminaUsage { get; private set; }
-  
+  public static bool DisableCultivatorStaminaUsage => disableCultivatorStaminaUsageConfigEntry?.Value ?? false;
+
   /**
    * <summary>Defines if stamina drain for moving while encumbered is disabled.</summary>
    */
-  public static bool DisableEncumberedStaminaDrain { get; private set; }
+  public static bool DisableEncumberedStaminaDrain => disableEncumberedStaminaDrainConfigEntry?.Value ?? false;
 
   /**
    * <summary>Multiplication modifier for stamina drain for running.</summary>
    */
-  public static float RunStaminaDrainModifier { get; private set; } = 1.0f;
+  public static float RunStaminaDrainModifier => (runStaminaDrainModifierConfigEntry?.Value ?? 100.0f) / 100.0f;
   
   /**
    * <summary>Multiplication modifier for stamina drain for running while not being noticed by mobs.</summary>
    */
-  public static float RunUnnoticedStaminaDrainModifier { get; private set; } = 1.0f;
+  public static float RunUnnoticedStaminaDrainModifier => (runUnnoticedStaminaDrainModifierConfigEntry?.Value ?? 100.0f) / 100.0f;
 
   /**
    * <summary>Multiplication modifier for stamina drain for jumping.</summary>
    */
-  public static float JumpStaminaDrainModifier { get; private set; } = 1.0f;
+  public static float JumpStaminaDrainModifier => (jumpStaminaDrainModifierConfigEntry?.Value ?? 100.0f) / 100.0f;
   
   /**
    * <summary>Multiplication modifier for stamina drain for jumping while not being noticed by mobs.</summary>
    */
-  public static float JumpUnnoticedStaminaDrainModifier { get; private set; } = 1.0f;
+  public static float JumpUnnoticedStaminaDrainModifier => (jumpUnnoticedStaminaDrainModifierConfigEntry?.Value ?? 100.0f) / 100.0f;
 
   /**
    * <summary>Multiplication modifier for stamina drain for sneaking.</summary>
    */
-  public static float SneakStaminaDrainModifier { get; private set; } = 1.0f;
+  public static float SneakStaminaDrainModifier => (sneakStaminaDrainModifierConfigEntry?.Value ?? 100.0f) / 100.0f;
   
   /**
    * <summary>Multiplication modifier for stamina drain for sneaking while not being noticed by mobs.</summary>
    */
-  public static float SneakUnnoticedStaminaDrainModifier { get; private set; } = 1.0f;
+  public static float SneakUnnoticedStaminaDrainModifier => (sneakUnnoticedStaminaDrainModifierConfigEntry?.Value ?? 100.0f) / 100.0f;
 
+  #endregion Public Getters
+  
   /**
-   * <summary>Reloads configuration values from the given config file.</summary>
-   * <param name="config">The config file to load values from.</param>
+   * <summary>Initiates configuration settings.</summary>
+   * <param name="currentConfig">The config to bind the settings to.</param>
+   * <param name="currentConfigSync">The config sync instance.</param>
    */
-  public static void Reload(ConfigFile config) {
-    
-    DisableHammerStaminaUsage = config.Bind(
+  public static void Init(ConfigFile currentConfig, ConfigSync currentConfigSync) {
+
+    config = currentConfig;
+    configSync = currentConfigSync;
+
+    disableHammerStaminaUsageConfigEntry = BindBinaryConfigurationSetting(
       "Tools",
       "Disable Hammer Stamina Usage",
       true,
-      new ConfigDescription(
-        "Disable stamina usage for using the hammer to build, repair or destroy pieces.", 
-        new AcceptableValueList<bool>(true, false)
-      )
-    ).Value;
+      "Disable stamina usage for using the hammer to build, repair or destroy pieces."
+    );
 
-    DisableHoeStaminaUsage = config.Bind(
+    disableHoeStaminaUsageConfigEntry = BindBinaryConfigurationSetting(
       "Tools",
       "Disable Hoe Stamina Usage",
       true,
-      new ConfigDescription(
-        "Disable stamina usage for using the hoe.", 
-        new AcceptableValueList<bool>(true, false)
-      )
-    ).Value;
+      "Disable stamina usage for using the hoe."
+    );
     
-    DisableCultivatorStaminaUsage = config.Bind(
+    disableCultivatorStaminaUsageConfigEntry = BindBinaryConfigurationSetting(
       "Tools",
       "Disable Cultivator Stamina Usage",
       true,
-      new ConfigDescription(
-        "Disable stamina usage for using the cultivator.", 
-        new AcceptableValueList<bool>(true, false)
-      )
-    ).Value;
+      "Disable stamina usage for using the cultivator."
+    );
     
-    DisableEncumberedStaminaDrain = config.Bind(
+    disableEncumberedStaminaDrainConfigEntry = BindBinaryConfigurationSetting(
       "Movement", 
       "Disable Encumbered Stamina Drain", 
       true, 
-      new ConfigDescription(
-        "Disable the stamina drain for moving while being encumbered. You will still not be able to run or jump while being encumbered.", 
-        new AcceptableValueList<bool>(true, false)
-      )
-    ).Value;
+      "Disable the stamina drain for moving while being encumbered. You will still not be able to run or jump while being encumbered."
+    );
     
-    RunStaminaDrainModifier = config.Bind(
+    runStaminaDrainModifierConfigEntry = BindAdjustmentConfigurationSetting(
       "Movement",
       "Run Stamina Drain Modifier",
       75f,
-      new ConfigDescription(
-        "Percentage modifier to decrease stamina drain for running. Setting this to 0 will disable the stamina usage, a value of 100 will be the vanilla experience.", 
-        new AcceptableValueRange<float>(0f, 100f)
-      )
-    ).Value / 100f;
+      "Percentage modifier to decrease stamina drain for running."
+    );
 
-    RunUnnoticedStaminaDrainModifier = config.Bind(
+    runUnnoticedStaminaDrainModifierConfigEntry = BindAdjustmentConfigurationSetting(
       "Movement",
       "Run Unnoticed Stamina Drain Modifier",
       50f,
-      new ConfigDescription(
-        "Percentage modifier to decrease stamina drain for running while no mob has noticed the player. Setting this to 0 will disable the stamina usage, a value of 100 will be the vanilla experience.", 
-        new AcceptableValueRange<float>(0f, 100f)
-      )
-    ).Value / 100f;
+      "Percentage modifier to decrease stamina drain for running while no mob has noticed the player."
+    );
 
-    JumpStaminaDrainModifier = config.Bind(
+    jumpStaminaDrainModifierConfigEntry = BindAdjustmentConfigurationSetting(
       "Movement",
       "Jump Stamina Drain Modifier",
       100f,
-      new ConfigDescription(
-        "Percentage modifier to decrease stamina drain for jumping. Setting this to 0 will disable the stamina usage, a value of 100 will be the vanilla experience.", 
-        new AcceptableValueRange<float>(0f, 100f)
-      )
-    ).Value / 100.0f;
+      "Percentage modifier to decrease stamina drain for jumping."
+    );
 
-    JumpUnnoticedStaminaDrainModifier = config.Bind(
+    jumpUnnoticedStaminaDrainModifierConfigEntry = BindAdjustmentConfigurationSetting(
       "Movement",
       "Jump Unnoticed Stamina Drain Modifier",
       100f,
-      new ConfigDescription(
-        "Percentage modifier to decrease stamina drain for jumping while no mob has noticed the player. Setting this to 0 will disable the stamina usage, a value of 100 will be the vanilla experience.", 
-        new AcceptableValueRange<float>(0f, 100f)
-      )
-    ).Value / 100f;
+      "Percentage modifier to decrease stamina drain for jumping while no mob has noticed the player."
+    );
 
-    SneakStaminaDrainModifier = config.Bind(
+    sneakStaminaDrainModifierConfigEntry = BindAdjustmentConfigurationSetting(
       "Movement",
       "Sneak Stamina Drain Modifier",
       100f,
-      new ConfigDescription(
-        "Percentage modifier to decrease stamina drain for sneaking. Setting this to 0 will disable the stamina usage, a value of 100 will be the vanilla experience.", 
-        new AcceptableValueRange<float>(0f, 100f)
-      )
-    ).Value / 100f;
+      "Percentage modifier to decrease stamina drain for sneaking."
+    );
 
-    SneakUnnoticedStaminaDrainModifier = config.Bind(
+    sneakUnnoticedStaminaDrainModifierConfigEntry = BindAdjustmentConfigurationSetting(
       "Movement",
       "Sneak Unnoticed Stamina Drain Modifier",
       100f,
+      "Percentage modifier to decrease stamina drain for sneaking while no mob has noticed the player."
+    );
+  }
+
+  /**
+   * <summary>Binds a binary config setting to the config and synchronizes it.</summary>
+   * <param name="section">The configuration section to list this setting in.</param>
+   * <param name="key">The config key to bind.</param>
+   * <param name="defaultValue">The default value.</param>
+   * <param name="description">The config setting's description.</param>
+   */
+  private static SyncedConfigEntry<bool> BindBinaryConfigurationSetting(string section, string key, bool defaultValue, string description) {
+
+    var entry = config!.Bind(
+      section,
+      key,
+      defaultValue,
       new ConfigDescription(
-        "Percentage modifier to decrease stamina drain for sneaking while no mob has noticed the player. Setting this to 0 will disable the stamina usage, a value of 100 will be the vanilla experience.", 
-        new AcceptableValueRange<float>(0f, 100f)
+        description, 
+        new AcceptableValueList<bool>(true, false)
       )
-    ).Value / 100f;
+    );
+    var syncedEntry = configSync!.AddConfigEntry(entry);
+    syncedEntry.SynchronizedConfig = true;
+    return syncedEntry;
   }
   
+  /**
+   * <summary>Binds a adjustment config setting to the config and synchronizes it.</summary>
+   * <param name="section">The configuration section to list this setting in.</param>
+   * <param name="key">The config key to bind.</param>
+   * <param name="defaultValue">The default value.</param>
+   * <param name="description">The config setting's description.</param>
+   */
+  private static SyncedConfigEntry<float> BindAdjustmentConfigurationSetting(string section, string key,
+    float defaultValue, string description) {
+
+    var entry = config!.Bind(
+      section,
+      key,
+      defaultValue,
+      new ConfigDescription(
+        description + " Setting this to 0 will disable the stamina usage, a value of 100 will be the default experience.", 
+        new AcceptableValueRange<float>(0f, 100f)
+      )
+    );
+    var syncedEntry = configSync!.AddConfigEntry(entry);
+    syncedEntry.SynchronizedConfig = true;
+    return syncedEntry;
+  }
+
 }
