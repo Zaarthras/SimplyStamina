@@ -6,7 +6,7 @@ namespace SimplyStamina;
 /**
  * <summary>Provides logic to adjust stamina drain.</summary>
  */
-[BepInPlugin(ModId, "Simply Stamina", "1.0.0.0")]
+[BepInPlugin(ModId, "Simply Stamina", "1.0.1.0")]
 public class SimplyStaminaPlugin : BaseUnityPlugin {
 
   /**
