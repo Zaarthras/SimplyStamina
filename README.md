@@ -2,7 +2,7 @@
 
 ## Description
 
-**Simply Stamina** is a Valheim mod that lets you adjust stamina drain for toll usage and movement actions.
+**Simply Stamina** is a Valheim mod that lets you adjust stamina drain for tool usage and movement actions.
 Currently, it offers the following modifications:
 - Disable stamina usage for the *hammer*, *hoe* and *cultivator*.
 - Decrease stamina drain for *running*, *jumping* and *sneaking*.
