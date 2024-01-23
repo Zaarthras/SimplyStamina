@@ -23,7 +23,7 @@ public class SimplyStaminaPlugin : BaseUnityPlugin {
   /**
    * <summary>The current version of this mod.</summary>
    */
-  private const string Version = "1.1.0";
+  private const string Version = "1.1.1";
   
   /**
    * <summary>Plugin startup logic.</summary>
@@ -32,7 +32,7 @@ public class SimplyStaminaPlugin : BaseUnityPlugin {
     var configSync = new ConfigSync(ModId) {
       DisplayName = DisplayName,
       CurrentVersion = Version,
-      MinimumRequiredVersion = Version,
+      MinimumRequiredVersion = "1.1.0",
     };
     SimplyStaminaSettings.Init(Config, configSync);
     new Harmony(ModId).PatchAll();
